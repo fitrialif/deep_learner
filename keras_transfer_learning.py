@@ -10,14 +10,15 @@ from keras.layers import Dropout, Flatten, Dense, GlobalAveragePooling2D
 from keras import backend as K
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard, EarlyStopping
 
-train_dir = 'data/train'
-val_dir = 'data/test'
-nb_epoch = 50
-batch_size = 64
+train_dir = 'data-reid/train'
+val_dir = 'data-reid/test'
+nb_epoch = 10
+batch_size = 128
 img_width = 60
 img_height = 160
-fc_size = 1024
+fc_size = 256
 LAYERS_TO_FREEZE = 5
+color_mode = 'grayscale'
 
 
 def get_nb_files(directory):
@@ -42,7 +43,7 @@ def setup_to_finetune(model):
 		layer.trainable = False
 	for layer in model.layers[LAYERS_TO_FREEZE:]:
 		layer.trainable = True
-	model.compile(optimizer=SGD(lr=0.01, momentum=0.9), loss='categorical_crossentropy', metrics=['accuracy'])
+	model.compile(optimizer=optimizers.SGD(lr=0.0001, momentum=0.9), loss='categorical_crossentropy', metrics=['accuracy'])
 
 
 def replace_last_layer(base_model, fc_size, nb_classes):
@@ -65,7 +66,7 @@ def train():
 	nb_classes = len(glob.glob(train_dir + "/*"))
 	nb_val_samples = get_nb_files(val_dir)
 	nb_epoch = 50
-	batch_size = 32
+	batch_size = 64
 
 	# Prepare data.
 	train_datagen = ImageDataGenerator(
@@ -90,16 +91,19 @@ def train():
 		train_dir,
 		target_size=(img_width, img_height),
 		batch_size=batch_size,
+		#color_mode=color_mode,
 	)
 
 	validation_generator = test_datagen.flow_from_directory(
 		val_dir,
 		target_size=(img_width, img_height),
 		batch_size=batch_size,
+		#color_mode=color_mode,
 	)
 
 	# setup model
-	base_model = applications.VGG19(weights = "imagenet", include_top=False, input_shape=(img_width, img_height, 3))
+	#base_model = applications.InceptionV3(weights='imagenet', include_top=False, input_shape=(img_width, img_height, 3))
+	base_model = applications.VGG16(weights = "imagenet", include_top=False, input_shape=(img_width, img_height, 3))
 	model = replace_last_layer(base_model, 256, nb_classes)
 
 	# transfer learning
@@ -107,7 +111,7 @@ def train():
 
 	history_tl = model.fit_generator(
 		train_generator,
-		nb_epoch=nb_epoch,
+		nb_epoch=25,
 		samples_per_epoch=nb_train_samples,
 		validation_data=validation_generator,
 		nb_val_samples=nb_val_samples,

@@ -99,3 +99,9 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# Other huge & useless stuff like...
+# images
+*.jpg
+# saved convnets
+*.h5
