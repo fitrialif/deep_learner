@@ -1,19 +1,22 @@
 from keras.preprocessing.image import ImageDataGenerator
-from keras.models import Sequential
+from keras.models import Sequential, Model
 from keras.layers import Conv2D, MaxPooling2D
-from keras.layers import Activation, Dropout, Flatten, Dense
+from keras.layers import Activation, Dropout, Flatten, Dense, Input, UpSampling2D
 from keras import optimizers
+from keras import initializers
 from keras import backend as K
+
+from keras.callbacks import TensorBoard
 import matplotlib.pyplot as plt
 
 img_width, img_height = 116, 116
 
-train_data_dir = 'cache_dir/train'
-validation_data_dir = 'cache_dir/test'
-nb_train_samples = 20000
-nb_validation_samples = 8000
+train_data_dir = 'data-biomedical-mono/train'
+validation_data_dir = 'data-biomedical-mono/test'
+nb_train_samples = 1000
+nb_validation_samples = 400
 epochs = 50
-batch_size = 128
+batch_size = 32
 
 if K.image_data_format() == 'channels_first':
 	input_shape = (1, img_width, img_height)
@@ -21,13 +24,22 @@ else:
 	input_shape = (img_width, img_height, 1)
 
 
-def create_model(learning=0.2):
+def create_model(learning=0.01):
 	model = Sequential()
-	model.add(Conv2D(64, (5, 5), input_shape=input_shape))
+	model.add(Conv2D(32, (3, 3), 
+		input_shape=input_shape,
+		kernel_initializer='random_normal'))
+	model.add(Activation('relu'))
+	model.add(Conv2D(32, (3, 3),
+		kernel_initializer='random_normal'))
 	model.add(Activation('relu'))
 	model.add(MaxPooling2D(pool_size=(2, 2)))
 
-	model.add(Conv2D(128, (5, 5)))
+	model.add(Conv2D(64, (3, 3),
+		kernel_initializer='random_normal'))
+	model.add(Activation('relu'))
+	model.add(Conv2D(64, (3, 3),
+		kernel_initializer='random_normal'))
 	model.add(Activation('relu'))
 	model.add(MaxPooling2D(pool_size=(2, 2)))
 
@@ -43,17 +55,46 @@ def create_model(learning=0.2):
 	model.compile(loss='binary_crossentropy', optimizer=op, metrics=['accuracy'])
 	return model
 
+def create_autoencoder():
+	input_img = Input(input_shape)
+
+	x = Conv2D(16, (3, 3), activation='relu', padding='same')(input_img)
+	x = MaxPooling2D((2, 2), padding = 'same')(x)
+	x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+	x = MaxPooling2D((2, 2), padding='same')(x)
+	x = Conv2D(8, (3, 3), activation = 'relu', padding='same')(x)
+	encoded = MaxPooling2D((2, 2), padding='same')(x)
+
+	x = Conv2D(8, (3, 3), activation='relu', padding='same')(encoded)
+	x = UpSampling2D((2, 2))(x)
+	x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+	x = UpSampling2D((2, 2))(x)
+	x = Conv2D(16, (3, 3), activation='relu')(x)
+	x = UpSampling2D((2, 2))(x)
+	decoded = Conv2D(1, (3, 3), activation='sigmoid', padding='same')(x)
+
+	autoencoder = Model(input_img, decoded)
+	autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
+
+	return autoencoder
+	
 #batch_size = 16
 
 # augmentation configuration for training
-train_datagen = ImageDataGenerator(rescale=1./255, shear_range=0.2, zoom_range=0.2, horizontal_flip=True)
+train_datagen = ImageDataGenerator(
+	rotation_range=30,
+	width_shift_range=0.2,
+	height_shift_range=0.2,
+	shear_range=0.2,
+	zoom_range=0.2,
+	horizontal_flip=True)
 
 # augmentation configuration for testing
 test_datagen = ImageDataGenerator(rescale=1.255)
 
-epochs = [10, 50]
-batch_size = [128, 256]
-learning_rates = [0.01, 0.1]
+epochs = [50]
+batch_size = [128]
+learning_rates = [0.01]
 
 # list comprehension to get all params values. TODO: parametrize for an arbitrary number of parameters
 list_params = [(p1, p2, p3) for p1 in epochs for p2 in batch_size for p3 in learning_rates]
@@ -71,9 +112,17 @@ for d in list_dict:
 	epochs = d.get('epochs')
 	learning_rates = d.get('learning_rates')
 	# Create model.
-	model = create_model(learning_rates)
-	train_generator = train_datagen.flow_from_directory('cache_dir/train', target_size=(img_width, img_height), color_mode='grayscale', batch_size=batch_size, class_mode='binary')
-	validation_generator = test_datagen.flow_from_directory('cache_dir/test', target_size=(img_width, img_height), color_mode='grayscale', batch_size=batch_size, class_mode='binary')
+	model = create_model()
+	train_generator = train_datagen.flow_from_directory(train_data_dir, 
+		target_size=(img_width, img_height), 
+		color_mode='grayscale', 
+		batch_size=batch_size, 
+		class_mode='binary')
+	validation_generator = test_datagen.flow_from_directory(validation_data_dir, 
+		target_size=(img_width, img_height), 
+		color_mode='grayscale', 
+		batch_size=batch_size, 
+		class_mode='binary')
 	history = model.fit_generator(train_generator, steps_per_epoch=nb_train_samples // batch_size, epochs=epochs, validation_data=validation_generator, validation_steps=nb_validation_samples // batch_size)
 	# history for accuracy
 	plt.plot(history.history['acc'])
