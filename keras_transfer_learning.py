@@ -114,7 +114,8 @@ def train():
 		samples_per_epoch=nb_train_samples,
 		validation_data=validation_generator,
 		nb_val_samples=nb_val_samples,
-		class_weight='auto')
+		class_weight='auto',
+		callbacks=ModelCheckpoint("checkpoint.h5"), EarlyStopping(monitor='val_loss', min_delta=0.01, patience=2, verbose=0, mode='auto'), TensorBoard(log_dir='./logs', histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None))
 
 	# history for accuracy
 	plt.plot(history_tl.history['acc'])
