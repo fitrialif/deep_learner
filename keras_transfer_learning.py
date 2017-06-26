@@ -8,7 +8,7 @@ from keras.models import Sequential, Model
 from keras.engine.topology import InputLayer
 from keras.layers import Dropout, Flatten, Dense, GlobalAveragePooling2D
 from keras import backend as K
-from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard, EarlyStopping
+from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard, EarlyStopping, CSVLogger
 
 from keras.applications.inception_v3 import preprocess_input
 
@@ -115,7 +115,10 @@ def train():
 		validation_data=validation_generator,
 		nb_val_samples=nb_val_samples,
 		class_weight='auto',
-		callbacks=ModelCheckpoint("checkpoint.h5"), EarlyStopping(monitor='val_loss', min_delta=0.01, patience=2, verbose=0, mode='auto'), TensorBoard(log_dir='./logs', histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None))
+		callbacks=ModelCheckpoint("checkpoint.h5"), 
+			EarlyStopping(monitor='val_loss', min_delta=0.01, patience=2, verbose=0, mode='auto'), 
+			TensorBoard(log_dir='./logs', histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None),
+			CSVLogger())
 
 	# history for accuracy
 	plt.plot(history_tl.history['acc'])
