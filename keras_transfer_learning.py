@@ -22,10 +22,10 @@ train_dir = 'data-reid/train'
 val_dir = 'data-reid/test'
 nb_epoch = 10
 batch_size = 128
-img_width = 160
+img_width = 60
 img_height = 160
 fc_size = 256
-LAYERS_TO_FREEZE = 249
+LAYERS_TO_FREEZE = 5
 color_mode = 'grayscale'
 
 # Dictionary of pre-trained ConvNets.
@@ -100,13 +100,20 @@ def train():
 	)
 
 	# setup model
-	base_model = applications.InceptionV3(weights = "imagenet", 
+	base_model = applications.VGG16(weights = "imagenet", 
 		include_top=False, 
 		input_shape=(img_width, img_height, 3))
 	model = TransferLearnUtils.replaceClassificationLayer(base_model, 256, nb_classes)
 
 	# transfer learning
 	TransferLearnUtils.setupTransferLearn(base_model, model)
+
+	early_stopping = EarlyStopping(monitor='val_loss',
+		min_delta=0.01,
+		patience=2,
+		verbose=0,
+		mode='auto')
+	csv_logger = CSVLogger('training.log')
 
 	history_tl = model.fit_generator(
 		train_generator,
@@ -115,10 +122,7 @@ def train():
 		validation_data=validation_generator,
 		nb_val_samples=nb_val_samples,
 		class_weight='auto',
-		callbacks=ModelCheckpoint("checkpoint.h5"), 
-			EarlyStopping(monitor='val_loss', min_delta=0.01, patience=2, verbose=0, mode='auto'), 
-			TensorBoard(log_dir='./logs', histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None),
-			CSVLogger())
+		callbacks=[early_stopping, csv_logger])
 
 	# history for accuracy
 	plt.plot(history_tl.history['acc'])
@@ -165,7 +169,7 @@ def train():
 	plt.legend(['train', 'test'], loc='upper right')
 	plt.show()
 
-	model.save('vgg16_biomedical.h5')
+	model.save('vgg16_reid_logged.h5')
 
 
 train()
