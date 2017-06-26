@@ -6,3 +6,6 @@ Re-id consists in the retrieval of the same individual which moves through an en
 
 ## Ok, why is this complicated?
 
+## And why use ConvNets?
+
+*Deep Learning* always fascinated me. It is probably due to its name: I am Italian, and we often think that English names 'enhance' the 'power' of almost anything (speaking of this, I found this [interesting video](https://youtu.be/Wr2YJoQeYsE), which talks about this phenomenon...).
