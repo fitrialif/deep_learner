@@ -1,4 +1,4 @@
-﻿# Keras for Image Classification
+# Keras for Image Classification
 
 ## Pre-requisites
 
