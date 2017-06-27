@@ -22,43 +22,13 @@ train_dir = 'data-reid/train'
 val_dir = 'data-reid/test'
 nb_epoch = 10
 batch_size = 128
-img_width = 60
-img_height = 160
+# 2.32 only for inception
+img_width = round(60*2.32)
+img_height = round(160*2.32)
 fc_size = 256
 LAYERS_TO_FREEZE = 5
 color_mode = 'grayscale'
 
-# Dictionary of pre-trained ConvNets.
-"""MODELS = {
-	'vgg16': VGG16,
-	'vgg19': VGG19,
-	'inception': InceptionV3,
-	'xception': Xception,
-	'resnet': ResNet50
-}"""
-
-"""
-def setup_to_transfer_learn(model, base_model):
-	for layer in base_model.layers:
-		layer.trainable = False
-	model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-
-
-def setup_to_finetune(model):
-	for layer in model.layers[:LAYERS_TO_FREEZE]:
-		layer.trainable = False
-	for layer in model.layers[LAYERS_TO_FREEZE:]:
-		layer.trainable = True
-	model.compile(optimizer=optimizers.SGD(lr=0.0001, momentum=0.9), loss='categorical_crossentropy', metrics=['accuracy'])
-
-
-def replace_last_layer(base_model, fc_size, nb_classes):
-	x = base_model.output
-	x = GlobalAveragePooling2D()(x)
-	x = Dense(fc_size, activation='relu')(x)
-	predictions = Dense(nb_classes, activation='softmax')(x)
-	model = Model(input=base_model.input, output=predictions)
-	return model"""
 
 
 def train():
@@ -100,7 +70,7 @@ def train():
 	)
 
 	# setup model
-	base_model = applications.VGG16(weights = "imagenet", 
+	base_model = applications.InceptionV3(weights = "imagenet", 
 		include_top=False, 
 		input_shape=(img_width, img_height, 3))
 	model = TransferLearnUtils.replaceClassificationLayer(base_model, 256, nb_classes)
@@ -113,7 +83,8 @@ def train():
 		patience=2,
 		verbose=0,
 		mode='auto')
-	csv_logger = CSVLogger('training.log')
+	csv_logger_tl = CSVLogger('training_tl_inception.log')
+	csv_logger_ft = CSVLogger('training_ft_inception.log')
 
 	history_tl = model.fit_generator(
 		train_generator,
@@ -122,7 +93,7 @@ def train():
 		validation_data=validation_generator,
 		nb_val_samples=nb_val_samples,
 		class_weight='auto',
-		callbacks=[early_stopping, csv_logger])
+		callbacks=[early_stopping, csv_logger_tl])
 
 	# history for accuracy
 	plt.plot(history_tl.history['acc'])
@@ -142,7 +113,7 @@ def train():
 	plt.show()
 
 	# fine tuning
-	TransferLearnUtils.setupFineTuning(model, 249)
+	TransferLearnUtils.setupFineTuning(model, LAYERS_TO_FREEZE)
 
 	history_ft = model.fit_generator(
 		train_generator,
@@ -150,7 +121,8 @@ def train():
 		nb_epoch=50,
 		validation_data=validation_generator,
 		nb_val_samples=nb_val_samples,
-		class_weight='auto')
+		class_weight='auto',
+		callbacks=[early_stopping, csv_logger_ft])
 
 	# history for accuracy
 	plt.plot(history_ft.history['acc'])
@@ -169,7 +141,7 @@ def train():
 	plt.legend(['train', 'test'], loc='upper right')
 	plt.show()
 
-	model.save('vgg16_reid_logged.h5')
+	model.save('inception_reid.h5')
 
 
 train()

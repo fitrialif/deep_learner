@@ -51,6 +51,7 @@ class TransferLearnUtils:
 		model.compile(optimizer=optimizer,
 			loss=loss,
 			metrics=metrics)
+#		return model
 
 	def setupFineTuning(model, layers_to_freeze=0, optimizer=optimizers.SGD(lr=0.001, momentum=0.9), loss='categorical_crossentropy', metrics=['accuracy']):
 		""""""
@@ -61,6 +62,7 @@ class TransferLearnUtils:
 		model.compile(optimizer=optimizer,
 			loss=loss,
 			metrics=metrics)
+#		return model
 
 	def replaceClassificationLayer(base_model, fc_size, nb_classes):
 		x = base_model.output
