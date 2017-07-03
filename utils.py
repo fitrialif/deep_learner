@@ -4,10 +4,11 @@ import itertools
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 from keras import optimizers
 from keras.layers import Dense, GlobalAveragePooling2D
 from keras.models import Model
+
+#from sklearn.metrics import confusion_matrics
 
 
 class ImageReadUtils:
@@ -42,7 +43,7 @@ class PlotUtils:
 		plt.xlabel('epoch')
 		plt.legend(['train', 'test'], loc='upper right')
 		plt.show()
-
+"""
 	def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues)
 		""""""
 		plt.imshow(cm, interpolation='nearest', cmap=cmap)
@@ -68,7 +69,7 @@ class PlotUtils:
 
 	    plt.tight_layout()
 	    plt.ylabel('True label')
-	    plt.xlabel('Predicted label')
+	    plt.xlabel('Predicted label')"""
 
 
 class TransferLearnUtils:

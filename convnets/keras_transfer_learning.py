@@ -70,7 +70,7 @@ def train():
 	)
 
 	# setup model
-	base_model = applications.Xception(weights = "imagenet", 
+	base_model = applications.VGG16(weights = "imagenet", 
 		include_top=False, 
 		input_shape=(img_width, img_height, 3))
 	model = TransferLearnUtils.replaceClassificationLayer(base_model, 256, nb_classes)
@@ -92,8 +92,8 @@ def train():
 		samples_per_epoch=nb_train_samples,
 		validation_data=validation_generator,
 		nb_val_samples=nb_val_samples,
-		class_weight='auto',
-		callbacks=[early_stopping, csv_logger_tl])
+		class_weight='auto'])
+#		callbacks=[early_stopping, csv_logger_tl])
 
 	# history for accuracy
 	plt.plot(history_tl.history['acc'])
