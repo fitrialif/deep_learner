@@ -18,13 +18,13 @@ import matplotlib.pyplot as plt
 from utils import ImageReadUtils, PlotUtils, TransferLearnUtils
 
 
-train_dir = 'data/data-reid/train'
-val_dir = 'data/data-reid/test'
+train_dir = 'data-biomedical/train'
+val_dir = 'data-biomedical/test'
 nb_epoch = 10
 batch_size = 128
 # 2.32 only for inception
-img_width = round(60*2.32)
-img_height = round(160*2.32)
+img_width = 116 #round(60*2.32)
+img_height = 116 #round(160*2.32)
 fc_size = 256
 LAYERS_TO_FREEZE = 5
 color_mode = 'grayscale'
@@ -70,7 +70,7 @@ def train():
 	)
 
 	# setup model
-	base_model = applications.Xception(weights = "imagenet", 
+	base_model = applications.VGG16(weights = "imagenet", 
 		include_top=False, 
 		input_shape=(img_width, img_height, 3))
 	model = TransferLearnUtils.replaceClassificationLayer(base_model, 256, nb_classes)
