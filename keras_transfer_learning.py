@@ -15,11 +15,11 @@ from keras.applications.inception_v3 import preprocess_input
 import matplotlib.pyplot as plt
 
 
-from utils import ImageReadUtils, PlotUtils, TransferLearnUtils
+from utils.utils import ImageReadUtils, PlotUtils, TransferLearnUtils
 
 
-train_dir = 'data-biomedical/train'
-val_dir = 'data-biomedical/test'
+train_dir = 'data-reid/train'
+val_dir = 'data-reid/test'
 nb_epoch = 10
 batch_size = 128
 # 2.32 only for inception
@@ -70,7 +70,7 @@ def train():
 	)
 
 	# setup model
-	base_model = applications.VGG16(weights = "imagenet", 
+	base_model = applications.Xception(weights = "imagenet", 
 		include_top=False, 
 		input_shape=(img_width, img_height, 3))
 	model = TransferLearnUtils.replaceClassificationLayer(base_model, 256, nb_classes)
