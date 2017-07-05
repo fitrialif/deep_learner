@@ -18,16 +18,15 @@ import matplotlib.pyplot as plt
 from utils.utils import ImageReadUtils, PlotUtils, TransferLearnUtils
 
 
-train_dir = 'data-reid/train'
-val_dir = 'data-reid/test'
+train_dir = 'DukeMTMC-reid/bounding_box_train'
+val_dir = 'DukeMTMC-reid/bounding_box_test'
 nb_epoch = 10
 batch_size = 128
 # 2.32 only for inception
-img_width = 116 #round(60*2.32)
-img_height = 116 #round(160*2.32)
+img_width = 60 #round(60*2.32)
+img_height = 160 #round(160*2.32)
 fc_size = 256
 LAYERS_TO_FREEZE = 5
-color_mode = 'grayscale'
 
 
 
@@ -70,7 +69,7 @@ def train():
 	)
 
 	# setup model
-	base_model = applications.Xception(weights = "imagenet", 
+	base_model = applications.VGG16(weights = "imagenet", 
 		include_top=False, 
 		input_shape=(img_width, img_height, 3))
 	model = TransferLearnUtils.replaceClassificationLayer(base_model, 256, nb_classes)
@@ -83,8 +82,8 @@ def train():
 		patience=2,
 		verbose=0,
 		mode='auto')
-	csv_logger_tl = CSVLogger('training_tl_inception.log')
-	csv_logger_ft = CSVLogger('training_ft_inception.log')
+	csv_logger_tl = CSVLogger('logs/tr_learn_reid_vgg16.log')
+	csv_logger_ft = CSVLogger('logs/fine_tun_reid_vgg16.log')
 
 	history_tl = model.fit_generator(
 		train_generator,
