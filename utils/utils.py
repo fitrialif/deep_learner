@@ -57,6 +57,13 @@ class ImageReadUtils:
 
 
 	def arrange_dataset_2(file_list, train_split=0.8):
+		# TODO: CHECK IF FILE LIST IS PROPERLY LONG (at least 5 identities). if it is not, train_split = round(leng)
+		if len(file_list) == 2:
+			train_split = 0.5
+		elif len(file_list) == 3:
+			train_split = 0.66
+		elif len(file_list) == 4:
+			train_split = 0.75
 		random_set = np.random.permutation(len(file_list))
 #		train_size = round(len(file_list)*train_split)
 #		test_size = len(file_list) - train_size
