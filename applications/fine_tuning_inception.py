@@ -21,8 +21,8 @@ input_tensor = Input(shape=(img_width, img_height, 3))
 train_dir = 'data-reid/train'
 test_dir = 'data-reid/test'
 
-nb_train_samples = ImageReadUtils.getNbFiles(train_dir)
-nb_val_samples = ImageReadUtils.getNbFiles(test_dir)
+nb_train_samples = ImageReadUtils.get_nb_files(train_dir)
+nb_val_samples = ImageReadUtils.get_nb_files(test_dir)
 
 # create the base pre-trained
 base_model = InceptionV3(weights='imagenet',
