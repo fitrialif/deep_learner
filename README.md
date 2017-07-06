@@ -15,9 +15,13 @@ It is built on top of a library (Keras) which is built on top of a library (Tens
 1. Install Python. Not sure how to do that? Check [this link](https://www.python.org/).
 2. Create a new virtual environment. I personally prefer [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/), but it is not mandatory.
 3. Activate the new environment, and clone this repo.
+
     git clone https://github.com/anhelus/keras_convnets.git
+
 4. Install requirements:
+
     pip install requirements.pip
+
 5. Create, in the folder where the repository has been cloned, a folder for your train examples (e.g. **data/train**) and a folder for your test examples (e.g. **data/test**).
 6. Move to the application folder, and run an application passing the required arguments from the command line.
 
