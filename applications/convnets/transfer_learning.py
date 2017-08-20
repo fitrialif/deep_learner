@@ -91,8 +91,12 @@ def train(train_dir, test_dir, input_shape, layers_to_freeze):
     base_model = VGG16(weights="imagenet",
                        include_top=False,
                        input_shape=(img_width, img_height, 3))
+    # TODO: rimpiazzare questa chiamata in trasfer_learning_utils
     model = replace_classification_layer(base_model, 256, nb_classes)
+    
     # Transfer learning.
+    # Metrics.
+
     setup_transfer_learn(base_model, model)
     early_stopping = EarlyStopping(monitor='val_loss',
                                    min_delta=0.01,
