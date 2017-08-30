@@ -28,31 +28,3 @@ It is built on top of a library (Keras) which is built on top of a library (Tens
 ## Applications
 
 For a complete list of the applications, check the [wiki](https://github.com/anhelus/deep_learner/wiki) (UNDER CONSTRUCTION!).
-
-## ConvNets
-
-### Transfer learning
-
-#### Algorithm
-
-1. Prepare data -> data should be prepared according to the following pattern:
-
-    train_dir/
-        class_1/
-        class_2/
-        ...
-        class_n/
-    val_dir/
-        class_1/
-        class_2/
-        ...
-        class_n/
-
-Note that class1_tr is different from class1_val!
-
-2. Prepare data generators
-    
-    train_datagen = ImageDataGenerator(**kwargs)
-    val_datagen = ImageDataGenerator(**kwargs)
-    train_generator = train_datagen.flow_from_directory(**kwargs)
-    validation_generator = val_datagen.flow_from_directory(**kwargs)
