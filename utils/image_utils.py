@@ -2,8 +2,6 @@ import os
 import glob
 import numpy as np
 
-
-
 def arrange_data_set(directory, file_extension='*.jpg'):
     if not os.path.exists(directory):
         return 0
