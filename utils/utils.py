@@ -1,6 +1,8 @@
 import os
 import glob
 from keras import backend as K
+import matplotlib.pyplot as plt
+from sklearn.cross_validation import train_test_split
 
 
 def set_image_format(img_rows, img_cols, img_channels, keras_backend):
@@ -63,3 +65,26 @@ def setup_to_finetune(model, layers_to_freeze):
     for layer in model.layers[layers_to_freeze:]:
         layer.trainable = True
     model.compile(optimizer=SGD(lr=0.0001, momentum=0.9), loss='categorical_crossentropy', metrics=['accuracy'])
+
+
+def split_each_label(root_folder, train_folder, test_folder):
+    # train dir = os.path.abspath('train')
+    # test_dir = os.path.abspath('test')
+    # try:
+    # os.makedirs(train_dir)
+    # os.makedirs(test_dir)
+    # except OSError:
+    # pass
+    if not os.path.exists(root_folder):
+        return 0
+    for root, dirs, files in os.walk(root_folder):
+        for d in dirs:
+            act_len = len(glob.glob(os.path.join(root, d + "/*")))
+            dir_path = os.path.join(os.path.relpath(d, root_folder))
+            if act_len > 20:
+                x = y = os.listdir(dir_path)
+                x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=0)
+                for x in x_train:
+                    os.rename(os.path.join(dir_path, x), os.path.join(train_root_folder + x, train_folder + x)
+                for x in x_test:
+                    os.rename(root_folder + x, test_folder + x)

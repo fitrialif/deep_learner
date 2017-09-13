@@ -13,9 +13,9 @@ from keras import backend as K
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard, EarlyStopping
 
 # Parameters
-img_width, img_height = 256, 512
-train_data_dir = "data/train"
-validation_data_dir = "data/val"
+img_width, img_height = 60, 160
+train_data_dir = "duke_dataset/train"
+validation_data_dir = "duke_dataset/test"
 
 def get_nb_files(directory):
     """
@@ -71,20 +71,12 @@ def train(args):
     train_datagen = ImageDataGenerator(
         rescale = 1./255,
         horizontal_flip=True,
-        fill_mode = 'nearest',
-        zoom_range=0.3,
-        width_shift_range=0.3,
-        height_shift_range=0.3,
-        rotation_range=30)
+        fill_mode = 'nearest')
 
     test_datagen = ImageDataGenerator(
         rescale = 1./255,
         horizontal_flip=True,
-        fill_mode='nearest',
-        zoom_range=0.3,
-        width_shift_range=0.3,
-        height_shift_range=0.3,
-        rotation_range=30)
+        fill_mode='nearest')
 
     train_generator = train_datagen.flow_from_directory(
         train_data_dir,
@@ -98,9 +90,10 @@ def train(args):
         class_mode='categorical')
     
     #checkpoint = ModelCheckpoint('vgg_16_reid.h5', monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+    tensorboard = TensorBoard(log_dir='./logs', histogram_freq=0, write_graph=True, write_images=True)
     early = EarlyStopping(monitor='val_acc', min_delta=0, patience=10, verbose=1, mode='auto')
 
-    base_model = applications.InceptionV3(weights='imagenet', include_top=False)
+    base_model = applications.VGG16(weights='imagenet', include_top=False)
     model = add_new_last_layer(base_model, get_nb_classes(train_data_dir), 1024)
 
     setup_to_transfer_learn(base_model, model)
@@ -112,7 +105,7 @@ def train(args):
         validation_data=validation_generator,
         nb_val_samples=nb_val_samples,
         class_weight='auto',
-        callbacks=[early])
+        callbacks=[early, tensorboard])
     
     setup_to_finetune(tl_model, 172)
 
