@@ -109,4 +109,6 @@ ENV/
 /.vscode
 # Numpy array
 *.npz
-./logs
+logs/
+/.idea
+*.csv
