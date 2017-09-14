@@ -2,7 +2,7 @@ import os
 import sys
 import glob
 import argparse
-import matplotlib.pyplot as plt
+import utils
 
 from keras import applications
 from keras.preprocessing.image import ImageDataGenerator
@@ -12,8 +12,10 @@ from keras.layers import Dropout, Flatten, Dense, GlobalAveragePooling2D
 from keras import backend as K
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard, EarlyStopping
 
+n=1
+
 # Parameters
-img_width, img_height = 60, 160
+img_width, img_height = 75*n, 187*n
 train_data_dir = "duke_dataset/train"
 validation_data_dir = "duke_dataset/test"
 
@@ -89,9 +91,8 @@ def train(args):
         target_size=(img_height, img_width),
         class_mode='categorical')
     
-    #checkpoint = ModelCheckpoint('vgg_16_reid.h5', monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
-    tensorboard = TensorBoard(log_dir='./logs', histogram_freq=0, write_graph=True, write_images=True)
-    early = EarlyStopping(monitor='val_acc', min_delta=0, patience=10, verbose=1, mode='auto')
+    tensorboard = TensorBoard(log_dir='./logs')
+    early = EarlyStopping(monitor='val_acc', min_delta=0.01, patience=3, verbose=1, mode='auto')
 
     base_model = applications.VGG16(weights='imagenet', include_top=False)
     model = add_new_last_layer(base_model, get_nb_classes(train_data_dir), 1024)
@@ -105,9 +106,9 @@ def train(args):
         validation_data=validation_generator,
         nb_val_samples=nb_val_samples,
         class_weight='auto',
-        callbacks=[early, tensorboard])
+        callbacks=[tensorboard, early])
     
-    setup_to_finetune(tl_model, 172)
+    utils.setup_to_finetune(model, 10)
 
     history_ft = model.fit_generator(
         train_generator,
