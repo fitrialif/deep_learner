@@ -100,15 +100,20 @@ ENV/
 # mypy
 .mypy_cache/
 
-# Other huge & useless stuff like...
+# Other stuff
 # images
 *.jpg
-# saved convnets
+*.bmp
+*.png
+# Saved models
 *.h5
-# visual studio code folder
-/.vscode
-# Numpy array
 *.npz
-logs/
+*.model
+# IDE folders
+/.vscode
 /.idea
+# Logs and data folders
+logs/
+data/
+# Other files
 *.csv
