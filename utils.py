@@ -1,8 +1,13 @@
 import os, glob, sys
+import numpy as np
 
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 #from keras import backend as K
 from sklearn.model_selection import train_test_split
-
+from keras import optimizers
+from pandas import DataFrame
+from pandas import concat
 
 def set_image_format(img_rows, img_cols, img_channels, keras_backend):
     """
@@ -14,12 +19,15 @@ def set_image_format(img_rows, img_cols, img_channels, keras_backend):
 
 
 def get_nb_files(root_folder):
-    """Get the number of files in a folder's hierarchy.
-    :param root_folder: A string which represents the root folder of the hierarchy.
-    :return file_count: An integer which represents the number of files in the folder's hierarchy.
+    """
+    Get the number of files in a folder's hierarchy.
+    Arguments:
+        root_folder: A string which represents the root folder.
+    Returns:
+        file_count: An integer which represents the number of files in the folder's hierarchy.
     """
     if not os.path.exists(root_folder):
-        return 0
+        sys.exit('Root folder does not exist.')
     file_count = 0
     for r, dirs, files in os.walk(root_folder):
         for dr in dirs:
@@ -27,43 +35,26 @@ def get_nb_files(root_folder):
     return file_count
 
 
-def get_nb_classes(folder):
-    """Get the number of classes in a folder.
-    :param folder: A string which represents the main data folder.
-    :return class_count: An integer which represents the number of classes in the main data folder.
+def get_labels(train_folder, validation_folder):
+    """Get the number of labels.
+    Arguments:
+        train_folder: A string which represents the relative path of the train folder.
+        validation_folder: A string which represents the relative path of the validation folder.
+    Return:
+        num_labels: An integer which represents the number of labels for the images on which the network will be trained.
     """
-    if not os.path.exists(folder):
-        return 0
-    class_count = len(glob.glob(folder + "/*"))
-    return class_count
+    if not os.path.exists(train_folder):
+        sys.exit('Train folder does not exist.')
+    if not os.path.exists(validation_folder):
+        sys.exit('Validation folder does not exist.')
+    if not (len(glob.glob(train_folder + "/*")) == len(glob.glob(validation_folder + "/*"))):
+        sys.exit('The number of training labels is different from the number of validation labels.')
+    else:
+        num_labels = len(glob.glob(train_folder + "/*"))
+        return num_labels
 
 
-def setup_transfer_learning(base_model, model):
-    """Freeze layers from the base_model and compile the model.
-    :param base_model: The part of the model that will not be re-trained for transfer learning.
-    :param model: The 
-    Freeze all layers and compile the model
-    """
-    for layer in base_model.layers:
-        layer.trainable = False
-    model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
 
-
-def add_new_last_layer(base_model, nb_classes, fc_size):
-    x = base_model.output
-    x = GlobalAveragePooling2D()(x)
-    x = Dense(fc_size, activation='relu')(x)
-    predictions = Dense(nb_classes, activation='softmax')(x)
-    model = Model(input=base_model.input, output=predictions)
-    return model
-
-
-def setup_to_finetune(model, layers_to_freeze):
-    for layer in model.layers[:layers_to_freeze]:
-        layer.trainable = False
-    for layer in model.layers[layers_to_freeze:]:
-        layer.trainable = True
-    model.compile(optimizer=SGD(lr=0.0001, momentum=0.9), loss='categorical_crossentropy', metrics=['accuracy'])
 
 
 def makedirs_wrapper(folder):
@@ -78,7 +69,6 @@ def makedirs_wrapper(folder):
 
 def split_each_label(root_folder, min_examples=0):
     """
-
     Algorithm:
     1. Check if root_folder exists
     2. Create train_folder and test_folder
@@ -86,6 +76,7 @@ def split_each_label(root_folder, min_examples=0):
     4. For each subfolder in the subfolder structure, check length and create sub-train and sub-test folders
     5. Split training and testing set
     6. Move images into proper folders
+    7. TODO: remove unused folders
     """
     if not os.path.exists(root_folder):
         sys.exit("Root folder does not exist.")
@@ -114,3 +105,51 @@ def split_each_label(root_folder, min_examples=0):
                         os.rename(os.path.join(dir_path, x), os.path.join(d_train_folder, x))
                     for x in x_test:
                         os.rename(os.path.join(dir_path, x), os.path.join(d_test_folder, x))
+
+
+
+
+# Courtesy of Jason Brownlee
+def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
+	"""
+	Frame a time series as a supervised learning dataset.
+	Arguments:
+		data: Sequence of observations as a list or NumPy array.
+		n_in: Number of lag observations as input (X).
+		n_out: Number of observations as output (y).
+		dropnan: Boolean whether or not to drop rows with NaN values.
+	Returns:
+		Pandas DataFrame of series framed for supervised learning.
+	"""
+	n_vars = 1 if type(data) is list else data.shape[1]
+	df = DataFrame(data)
+	cols, names = list(), list()
+	# input sequence (t-n, ... t-1)
+	for i in range(n_in, 0, -1):
+		cols.append(df.shift(i))
+		names += [('var%d(t-%d)' % (j+1, i)) for j in range(n_vars)]
+	# forecast sequence (t, t+1, ... t+n)
+	for i in range(0, n_out):
+		cols.append(df.shift(-i))
+		if i == 0:
+			names += [('var%d(t)' % (j+1)) for j in range(n_vars)]
+		else:
+			names += [('var%d(t+%d)' % (j+1, i)) for j in range(n_vars)]
+	# put it all together
+	agg = concat(cols, axis=1)
+	agg.columns = names
+	# drop rows with NaN values
+	if dropnan:
+		agg.dropna(inplace=True)
+	return agg
+
+def plot_training(history):
+    val_acc = history.history['val_acc']
+    val_loss = history.history['val_loss']
+    epochs = range(len(acc))
+    plt.plot(epochs, val_acc, 'r')
+    plt.title('Validation accuracy')
+    plt.figure()
+    plt.plot(epochs, val_loss, 'r-')
+    plt.title('Validation loss')
+    plt.show()
