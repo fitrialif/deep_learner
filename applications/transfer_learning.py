@@ -2,7 +2,7 @@ import os
 import sys
 import glob
 import argparse
-import utils
+from .utils import utils
 
 from keras import applications
 from keras import metrics
@@ -18,7 +18,7 @@ n=1
 # Parameters
 img_width, img_height = 75*n, 187*n
 
-
+# TODO: REFACTORING
 def transfer_learning(base_model, model, model_load, optimizer=optimizers.SGD(lr=0.01, momentum=0.9), loss='categorical_crossentropy', metrics=['accuracy']):
     """
     Freeze layers from the base model.
@@ -155,8 +155,8 @@ if __name__=='__main__':
     callbacks = [tensorboard, early, checkpoint]
     a = argparse.ArgumentParser()
     a.add_argument("--base_architecture", default='InceptionV3')
-    a.add_argument("--train_folder", default='data/train')
-    a.add_argument("--validation_folder", default='data/test')
+    a.add_argument("--train_folder", default='./data/train')
+    a.add_argument("--validation_folder", default='./data/test')
     a.add_argument("--nb_epoch", default=1)
     a.add_argument("--batch_size", default=128)
     a.add_argument("--output_model_file", default="inceptionv3.model")
