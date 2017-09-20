@@ -146,7 +146,7 @@ def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
 def plot_training(history):
     val_acc = history.history['val_acc']
     val_loss = history.history['val_loss']
-    epochs = range(len(acc))
+    epochs = range(len(history.history['acc']))
     plt.plot(epochs, val_acc, 'r')
     plt.title('Validation accuracy')
     plt.figure()

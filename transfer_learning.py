@@ -73,10 +73,10 @@ def train(args):
     """
     Performs training.
     """
-    train_dir = args.train_dir
-    val_dir = args.val_dir
-    nb_train_samples = utils.get_nb_files(args.train_dir)
-    nb_val_samples = utils.get_nb_files(args.val_dir)
+    train_dir = args.train_folder
+    val_dir = args.validation_folder
+    nb_train_samples = utils.get_nb_files(args.train_folder)
+    nb_val_samples = utils.get_nb_files(args.validation_folder)
     nb_classes = utils.get_labels(args.train_folder, args.validation_folder)
     nb_epochs = int(args.nb_epoch)
     batch_size = int(args.batch_size)
@@ -93,10 +93,9 @@ def train(args):
         base_model = applications.InceptionV3(weights='imagenet', include_top=False)
         layers_to_freeze = 172 # TODO: understand how many levels!
     elif base_architecture == 'ResNet50':
-        base_model = applications.ResNet50(weights='imagenet', include_top=False)
-    model = add_new_last_layer(base_model, get_nb_classes(train_data_dir), 1024)
-    # Transfer learning.
-    transfer_learning(args)
+        base_model = applications.Xception(weights='imagenet', include_top=False)
+    model = replace_classification_layer(base_model, nb_classes, 1024)
+    
     # Data augmentation.
     train_datagen = ImageDataGenerator(
         rescale = 1./255,
@@ -107,17 +106,17 @@ def train(args):
         horizontal_flip=True,
         fill_mode='nearest')
     train_generator = train_datagen.flow_from_directory(
-        train_data_dir,
+        train_dir,
         target_size=(img_height, img_width),
         batch_size=batch_size,
         class_mode='categorical')
     validation_generator = test_datagen.flow_from_directory(
-        validation_data_dir,
+        val_dir,
         target_size=(img_height, img_width),
         class_mode='categorical')
     
 
-    utils.setup_transfer_learning(base_model, model, model_load)
+    transfer_learning(base_model, model, model_load)
 
     history_tl = model.fit_generator(
         train_generator,
@@ -128,7 +127,9 @@ def train(args):
         class_weight='auto',
         callbacks=args.callbacks)
     
-    utils.setup_to_finetune(model, layers_to_freeze, model_load)
+    utils.plot_training(history_tl)
+
+    setup_fine_tuning(model, layers_to_freeze, model_load)
 
     history_ft = model.fit_generator(
         train_generator,
@@ -142,8 +143,7 @@ def train(args):
     # NOTE
     model.save(os.path.join(os.getcwd(), 'models', args.output_model_file))
 
-    if args.plot:
-        plot_training(history_ft)
+    utils.plot_training(history_ft)
 
 
 
@@ -154,10 +154,10 @@ if __name__=='__main__':
     checkpoint = ModelCheckpoint("weights.hdf5", monitor='val_acc', verbose=1, save_best_only=True, mode='max')
     callbacks = [tensorboard, early, checkpoint]
     a = argparse.ArgumentParser()
-    a.add_argument("--base_architecture", default='VGG16')
-    a.add_argument("--train_dir", default='data/train')
-    a.add_argument("--val_dir", default='data/test')
-    a.add_argument("--nb_epoch", default=25)
+    a.add_argument("--base_architecture", default='InceptionV3')
+    a.add_argument("--train_folder", default='data/train')
+    a.add_argument("--validation_folder", default='data/test')
+    a.add_argument("--nb_epoch", default=1)
     a.add_argument("--batch_size", default=128)
     a.add_argument("--output_model_file", default="inceptionv3.model")
     a.add_argument("--plot", action="store_true")
@@ -166,11 +166,11 @@ if __name__=='__main__':
 
     args = a.parse_args()
 
-    if args.train_dir is None or args.val_dir is None:
+    if args.train_folder is None or args.validation_folder is None:
         a.print_help()
         sys.exit(1)
 
-    if (not os.path.exists(args.train_dir)) or (not os.path.exists(args.val_dir)):
+    if (not os.path.exists(args.train_folder)) or (not os.path.exists(args.validation_folder)):
         print("directories do not exist")
         sys.exit(1)
 

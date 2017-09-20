@@ -107,6 +107,7 @@ ENV/
 *.png
 # Saved models
 *.h5
+*.hdf5
 *.npz
 *.model
 # IDE folders
