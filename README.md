@@ -21,3 +21,21 @@ It is built on top of a library (Keras) which is built on top of a library (Tens
 4. Install requirements:
 
         pip install -r requirements.pip
+
+## Usage
+
+Each module can be used for a specific purpose. As an example, the `transfer_learning` module is used for transfer learning (pretty creative, I know). Just specify the location of your `data` folder in the arguments, and you are good to go.
+
+Check the [wiki](https://github.com/anhelus/deep_learner/wiki) for all the necessary information.
+
+## Contributing
+
+Check the [contributing guidelines](https://github.com/anhelus/deep_learner/contributing.md).
+
+## Credits
+
+Angelo Cardellicchio 2017
+
+## License
+
+The project is released under [MIT](https://opensource.org/licenses/MIT) license.
