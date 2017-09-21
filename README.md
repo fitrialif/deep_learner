@@ -30,7 +30,7 @@ Check the [wiki](https://github.com/anhelus/deep_learner/wiki) for all the neces
 
 ## Contributing
 
-Check the [contributing guidelines](https://github.com/anhelus/deep_learner/contributing.md).
+Check the [contributing guidelines](https://github.com/anhelus/deep_learner/blob/master/contributing.md).
 
 ## Credits
 
