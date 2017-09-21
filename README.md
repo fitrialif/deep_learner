@@ -20,11 +20,4 @@ It is built on top of a library (Keras) which is built on top of a library (Tens
 
 4. Install requirements:
 
-        pip install requirements.pip
-
-5. Create, in the folder where the repository has been cloned, a folder for your train examples (e.g. **data/train**) and a folder for your test examples (e.g. **data/test**).
-6. Move to the application folder, and run an application passing the required arguments from the command line.
-
-## Applications
-
-For a complete list of the applications, check the [wiki](https://github.com/anhelus/deep_learner/wiki) (UNDER CONSTRUCTION!).
+        pip install -r requirements.pip
