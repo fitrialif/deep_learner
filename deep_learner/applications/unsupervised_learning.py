@@ -31,6 +31,11 @@ n=1
 # Parameters
 img_width, img_height = 75*n, 187*n
 
+# 1. Normalized Mutual Information score
+
+
+def UnsupervisedLearning():
+    
 
 def train(args):
     """

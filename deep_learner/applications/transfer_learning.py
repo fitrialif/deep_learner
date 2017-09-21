@@ -1,3 +1,10 @@
+"""Transfer Learning utils for Keras.
+
+Transfer learning and fine tuning follows the implementation defined by Yosinski et al.:
+http://papers.nips.cc/paper/5347-how-transferable-are-features-in-deep-neural-networks.pdf
+
+"""
+
 import os
 import sys
 import glob
@@ -69,7 +76,7 @@ def setup_fine_tuning(model, layers_to_freeze, model_load):
     model.compile(optimizer=optimizers.SGD(lr=0.0001, momentum=0.9), loss='categorical_crossentropy', metrics=['accuracy'])
 
 
-def train(args):
+def TransferLearning(args):
     """
     Performs training.
     """
@@ -93,18 +100,28 @@ def train(args):
         base_model = applications.InceptionV3(weights='imagenet', include_top=False)
         layers_to_freeze = 172 # TODO: understand how many levels!
     elif base_architecture == 'ResNet50':
-        base_model = applications.Xception(weights='imagenet', include_top=False)
+        base_model = applications.ResNet50(weights='imagenet', include_top=False)
+
     model = replace_classification_layer(base_model, nb_classes, 1024)
     
     # Data augmentation.
     train_datagen = ImageDataGenerator(
         rescale = 1./255,
         horizontal_flip=True,
-        fill_mode = 'nearest')
+        vertical_flip=True
+        fill_mode = 'nearest',
+        rotation_range=30,
+        width_shift_range=0.05,
+        height_shift_range=0.05)
     test_datagen = ImageDataGenerator(
         rescale = 1./255,
         horizontal_flip=True,
-        fill_mode='nearest')
+        vertical_flip=True
+        fill_mode = 'nearest',
+        rotation_range=30,
+        width_shift_range=0.05,
+        height_shift_range=0.05)
+
     train_generator = train_datagen.flow_from_directory(
         train_dir,
         target_size=(img_height, img_width),
@@ -113,6 +130,7 @@ def train(args):
     validation_generator = test_datagen.flow_from_directory(
         val_dir,
         target_size=(img_height, img_width),
+        batch_size=batch_size,
         class_mode='categorical')
     
 
@@ -157,12 +175,14 @@ if __name__=='__main__':
     a.add_argument("--base_architecture", default='InceptionV3')
     a.add_argument("--train_folder", default='./data/train')
     a.add_argument("--validation_folder", default='./data/test')
-    a.add_argument("--nb_epoch", default=1)
+    a.add_argument("--nb_epoch", default=25)
     a.add_argument("--batch_size", default=128)
     a.add_argument("--output_model_file", default="inceptionv3.model")
     a.add_argument("--plot", action="store_true")
     a.add_argument("--model_load", default='')
     a.add_argument("--callbacks", default = callbacks)
+    a.add_argument("--train_generator", default=None)
+    a.add_argument("--validation_generator", default=None)
 
     args = a.parse_args()
 
