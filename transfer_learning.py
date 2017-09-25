@@ -101,28 +101,17 @@ def TransferLearning(args):
         layers_to_freeze = 172 # TODO: understand how many levels!
     elif base_architecture == 'ResNet50':
         base_model = applications.ResNet50(weights='imagenet', include_top=False)
+    elif base_architecture == 'Xception':
+        base_model = applications.Xception(weights='imagenet', include_top=False)
 
     model = replace_classification_layer(base_model, nb_classes, 1024)
     
-    # Data augmentation.
-    if not args.train_datagen:
-        train_datagen = ImageDataGenerator(
-            rescale = 1./255,
-            horizontal_flip=True,
-            fill_mode='nearest',
-            width_shift_range=0.05,
-            height_shift_range=0.05)
-    else:
-        train_datagen = args.train_datagen
-    if not args.test_datagen:        
-        test_datagen = ImageDataGenerator(
-            rescale = 1./255,
-            horizontal_flip=True,
-            fill_mode='nearest',
-            width_shift_range=0.05,
-            height_shift_range=0.05)
-    else:
-        test_datagen = args.test_datagen
+    train_datagen = ImageDataGenerator(
+        rescale = 1./255,
+        fill_mode='nearest')
+    test_datagen = ImageDataGenerator(
+        rescale = 1./255,
+        fill_mode='nearest')
 
     train_generator = train_datagen.flow_from_directory(
         train_dir,
@@ -174,7 +163,7 @@ if __name__=='__main__':
     checkpoint = ModelCheckpoint("weights.hdf5", monitor='val_acc', verbose=1, save_best_only=True, mode='max')
     callbacks = [tensorboard, early, checkpoint]
     a = argparse.ArgumentParser()
-    a.add_argument("--base_architecture", default='InceptionV3')
+    a.add_argument("--base_architecture", default='Xception')
     a.add_argument("--train_folder", default='./data/train')
     a.add_argument("--validation_folder", default='./data/test')
     a.add_argument("--nb_epoch", default=25)

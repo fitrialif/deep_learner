@@ -73,6 +73,7 @@ def split_each_label(root_folder, min_examples=0):
     1. Check if root_folder exists
     2. Create train_folder and test_folder
     3. TODO: CREATE THE SUBFOLDER STRUCTURE FROM STRING NAME
+    TODO: BALANCE DATABASE
     4. For each subfolder in the subfolder structure, check length and create sub-train and sub-test folders
     5. Split training and testing set
     6. Move images into proper folders
