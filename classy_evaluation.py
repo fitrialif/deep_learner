@@ -15,7 +15,7 @@ from sklearn.cluster import KMeans, MiniBatchKMeans, AffinityPropagation, MeanSh
 from sklearn import metrics
 
 
-def choose_network_model(network_model='VGG16', input_layer_shape=(197, 197, 3)):
+def load_network(network_model='VGG16', input_layer_shape=(197, 197, 3)):
     """
     Choose the network base model.
     Params:
@@ -33,10 +33,10 @@ def choose_network_model(network_model='VGG16', input_layer_shape=(197, 197, 3))
     return network_model_dictionary[network_model]
 
 
-def choose_dataset(dataset='cifar10'):
+def load_dataset(dataset='cifar10'):
     dataset_dictionary = {
-        'cifar10': cifar10,
-        'cifar100': cifar100}
+        'cifar10': cifar10.load_data(),
+        'cifar100': cifar100.load_data()}
     return dataset_dictionary[dataset]
 
 
@@ -44,84 +44,102 @@ def choose_clustering_algorithm(clustering_algorithm='KMeans', n_clusters=10):
     clustering_dictionary = {
         'KMeans': KMeans(n_clusters=n_clusters),
         'MiniBatchKMeans': MiniBatchKMeans(n_clusters=n_clusters),
-        'AffinityPropagation': AffinityPropagation(n_clusters=n_clusters)}
+        'AffinityPropagation': AffinityPropagation()}
     return clustering_dictionary[clustering_algorithm]
 
 
+# TODO: REFACTORING NEEDED
 def classy_evaluation(args):
     dataset = args.dataset
     network_model = args.network_model
     compute_bottleneck_features(args)
 
 
-def compute_bottleneck_features(args):
-    
-    model_choice = args.network_model
-    do_pca = args.do_pca
-    pca_components = args.pca_components
-    dataset = args.dataset
-    clustering_algorithm = args.cluster_algorithm
-    do_clustering = args.do_clustering
-    do_tsne = args.do_tsne
-
-    (x_train, y_train), (x_test, y_test) = cifar10.load_data()
+def compute_bottleneck_features(model_choice='VGG16', dataset='cifar10', input_shape=(197, 197, 3)):
+    """
+    Compute bottleneck features.
+    Arguments:
+        model_choice:
+        dataset:
+        input_shape:
+    Return:
+        bottleneck_features:
+    """
+    # Load dataset and network model.
+    (x_train, y_train), (x_test, y_test) = load_dataset(dataset)
     y_train = np.squeeze(y_train)
-    print('data loaded')
-
-    model = choose_network_model(model_choice)
-    print('Model loaded.')
-
-    # bottleneck features
-    feature_file = model_choice + '_features_train.npz'
-    if os.path.exists(feature_file):
-        print('Bottleneck feature detected. Loading...')
-        features = np.load(feature_file)['features']
+    print('Dataset loaded.')
+    model = load_network(model_choice)
+    print('Pretrained network model loaded.')
+    # Load or compute bottleneck features. If the feature filename exists, load it. Otherwise, compute features.
+    bottleneck_features_filename = model_choice + '_features_train.npz'
+    if os.path.exists(bottleneck_features_filename):
+        print('Bottleneck features detected. Loading...')
+        features = np.load(bottleneck_features_filename)['features']
     else:
+        # Pre-process data. Fit them into a Numpy array, and pre-process them as needed.
         print('Bottleneck features not detected. Pre-processing data...')
-        # pre-process the train data
-        big_x_train = np.array([scipy.misc.imresize(x_train[i], (197, 197, 3)) for i in range(0, len(x_train))]).astype('float32')
-        input_train = preprocess_input(big_x_train)
-        print('Data pre-processed. Predicting bottleneck features...')
-        # extract, process, and save bottleneck features
-        features = model.predict(input_train)
-        features = np.squeeze(features)
+        x_train_array = np.array([scipy.misc.imresize(x_train[i], input_shape) for i in range(0, len(x_train))]).astype('float32')
+        if model_choice == 'InceptionV3':
+            input_train = applications.inception_v3.preprocess_input(x_train_array)
+        elif model_choice == 'ResNet50':
+            input_train = applications.resnet50.preprocess_input(x_train_array)
+        elif:
+            input_train = x_train_array
+        print('Pre-processing complete. Predicting bottleneck features...')
+        bottleneck_features = model.predict(input_train)
+        bottleneck_features = np.squeeze(bottleneck_features)
         print('Bottleneck features predicted. Saving...')
-        np.savez(feature_file, features=features)
-        print('bottleneck features saved(train)')
-    
-    if do_clustering == True:
-        cluster_file = clustering_algorithm + "_labels_pred.npz"
-        if os.path.exists(cluster_file):
-            print("clustering detected loading")
-            labels_pred = np.load(cluster_file)['labels_pred']
-        else:
-            print('Labels prediction not detected. Clustering...')
-            clustering_model = choose_clustering_algorithm(clustering_algorithm)
-            labels_pred = clustering_model.fit_predict(features.reshape([features.shape[0], np.prod(features.shape[1:])]).astype('float'))
-            np.savez(cluster_file, labels_pred = labels_pred)
+        np.savez(bottleneck_features_filename, features=bottleneck_features)
+        print('Bottleneck features saved.')    
+    return features
 
-    if do_pca == True:
-        pca_file = model_choice + '_pca_features.npz'
-        if os.path.exists(pca_file):
-            print('loading pca')
-            pca_features = np.load(pca_file)['pca_features']
-            explained_variance = np.load(pca_file)['explained_variance']
-        else:
-            print('computing pca features')
-            pca = PCA(n_components=200)
-            pca_features = pca.fit_transform(features.reshape([features.shape[0], np.prod(features.shape[1:])]).astype('float'))
-            explained_variance = pca.explained_variance_ratio_
-            np.savez(pca_file, pca_features=pca_features, explained_variance=explained_variance)
-            print('pca saved')
+def compute_clusters(features, clustering_algorithm='KMeans'):
+    """
+    Compute clusters.
+    Arguments:
+        features:
+        clustering_algorithm:
+    Return:
+        predicted_clusters:
+    """
+    clusters_filename = clustering_algorithm + '_predicted_clusters.npz'
+    if os.path.exists(clusters_filename):
+        print('Predicted clusters detected. Loading...')
+        predicted_clusters = np.load(clusters_filename)['predicted_clusters']
     else:
-        pca_features = features
+        print('Predicted clusters not detected. Predicting clusters...')
+        clustering_model = choose_clustering_algorithm(clustering_algorithm)
+        predicted_clusters = clustering_model.fit_predict(features.reshape([features.shape[0], np.prod(features.shape[1:])]).astype('float32'))
+        np.savez(clusters_filename, predicted_clusters = predicted_clusters)
+    return predicted_clusters
 
+def compute_pca_features(data, pca_components=200, pca_savefig=True):
+    pca_file = model_choice + '_pca_features.npz'
+    if os.path.exists(pca_file):
+        print('loading pca')
+        pca_features = np.load(pca_file)['pca_features']
+        explained_variance = np.load(pca_file)['explained_variance']
+    else:
+        print('computing pca features')
+        pca = PCA(n_components=200)
+        pca_features = pca.fit_transform(features.reshape([features.shape[0], np.prod(features.shape[1:])]).astype('float'))
+        explained_variance = pca.explained_variance_ratio_
+        np.savez(pca_file, pca_features=pca_features, explained_variance=explained_variance)
+        print('pca saved')
+
+    if pca_savefig == True:        
         plt.plot(np.cumsum(explained_variance))
         plt.xlabel('Pca components')
         plt.ylabel('Explained variance (%)')
         plt.title('Variance explained by PCA')
         plt.savefig(model_choice + '_pca_explained_variance.jpg')
 
+    return pca_components
+
+# REFACTORING NEEDED
+def compute_tsne_features(data):
+    tsne_filename = 
 
     if do_tsne == True:
         tsne_file = model_choice + '_tsne_features.npz'
@@ -140,16 +158,20 @@ def compute_bottleneck_features(args):
         plt.title('t-SNE clusters')
         plt.savefig(model_choice + '_tsne.jpg')
 
+def iterative_evaluate_clusters(labels, predicted_clusters, metrics='ARI'):
+    """
+    """
+    # Pre-process labels and predicted_clusters vectors.
+    labels = labels.reshape((1, len(labels))).ravel()
+    predicted_clusters = predicted_clusters.reshape((1, len(predicted_clusters))).ravel()
 
-    # Clustering metrics
-    y_train = y_train.reshape((1, len(y_train))).ravel()
-    labels_pred = labels_pred.reshape((1, len(y_train))).ravel()
+    metric_dictionary = {
+        'ARI': metrics.adjusted_rand_score(labels, predicted_clusters),
+        'AMI': metrics.adjusted_mutual_info_score(labels, predicted_clusters)
+    }
+    # TODO: RETURN A LIST
 
-    ari = metrics.adjusted_rand_score(y_train, labels_pred)
-    ami = metrics.adjusted_mutual_info_score(y_train, labels_pred)
-
-    print("ARI is: " + ari)
-    print("AMI is: " + ami)
+    return metric_dictionary[metric]
 
 
 if __name__ == '__main__':
