@@ -9,31 +9,6 @@ from keras import optimizers
 from pandas import DataFrame
 from pandas import concat
 
-def set_image_format(img_rows, img_cols, img_channels, keras_backend):
-    """
-    """
-    if keras_backend == 'channels_first':
-        input_shape = (img_channels, img_rows, img_cols)
-    else:
-        input_shape = (img_rows, img_cols, img_channels)
-
-
-def get_nb_files(root_folder):
-    """
-    Get the number of files in a folder's hierarchy.
-    Arguments:
-        root_folder: A string which represents the root folder.
-    Returns:
-        file_count: An integer which represents the number of files in the folder's hierarchy.
-    """
-    if not os.path.exists(root_folder):
-        sys.exit('Root folder does not exist.')
-    file_count = 0
-    for r, dirs, files in os.walk(root_folder):
-        for dr in dirs:
-            file_count += len(glob.glob(os.path.join(r, dr + "/*")))
-    return file_count
-
 
 def get_labels(train_folder, validation_folder):
     """Get the number of labels.
@@ -52,9 +27,6 @@ def get_labels(train_folder, validation_folder):
     else:
         num_labels = len(glob.glob(train_folder + "/*"))
         return num_labels
-
-
-
 
 
 def makedirs_wrapper(folder):

@@ -4,7 +4,7 @@ import scipy
 import os
 import argparse
 
-from keras.datasets import cifar10
+from keras.datasets import cifar10, cifar100
 from keras.applications import Xception, VGG16, VGG19, ResNet50, InceptionV3, MobileNet
 from keras.applications.inception_v3 import preprocess_input
 from keras.applications.resnet50 import preprocess_input, decode_predictions
@@ -15,7 +15,7 @@ from sklearn.cluster import KMeans, MiniBatchKMeans, AffinityPropagation, MeanSh
 from sklearn import metrics
 
 
-def load_network(network_model='VGG16', input_layer_shape=(197, 197, 3)):
+def load_base_network(network_model='VGG16', input_layer_shape=(197, 197, 3)):
     """
     Choose the network base model.
     Params:
@@ -50,12 +50,28 @@ def choose_clustering_algorithm(clustering_algorithm='KMeans', n_clusters=10):
 
 # TODO: REFACTORING NEEDED
 def classy_evaluation(args):
+    """
+    Main method for the file.
+    """
     dataset = args.dataset
     network_model = args.network_model
-    compute_bottleneck_features(args)
+    perform_pca = args.perform_pca
+
+features, pca_filename, pca_components=200, pca_savefig=True
+
+    # Step 1. Compute bottleneck features.
+    bottleneck_features_filename = network_model + '_bottleneck_features.npz'
+    bottleneck_features = compute_bottleneck_features(bottleneck_features_filename, network_model, dataset)
+    # Step 2. Perform PCA (if specified).
+    if perform_pca == True:
+        pca_components = compute_pca_components(features)
+        
 
 
-def compute_bottleneck_features(model_choice='VGG16', dataset='cifar10', input_shape=(197, 197, 3)):
+    clusters_filename = clustering_algorithm + '_predicted_clusters.npz'
+
+# REFACTORING NEEDED: PASS FEATURE NAME
+def compute_bottleneck_features(bottleneck_features_filename, model_choice='VGG16', dataset='cifar10', input_shape=(197, 197, 3)):
     """
     Compute bottleneck features.
     Arguments:
@@ -71,8 +87,8 @@ def compute_bottleneck_features(model_choice='VGG16', dataset='cifar10', input_s
     print('Dataset loaded.')
     model = load_network(model_choice)
     print('Pretrained network model loaded.')
+
     # Load or compute bottleneck features. If the feature filename exists, load it. Otherwise, compute features.
-    bottleneck_features_filename = model_choice + '_features_train.npz'
     if os.path.exists(bottleneck_features_filename):
         print('Bottleneck features detected. Loading...')
         features = np.load(bottleneck_features_filename)['features']
@@ -94,16 +110,16 @@ def compute_bottleneck_features(model_choice='VGG16', dataset='cifar10', input_s
         print('Bottleneck features saved.')    
     return features
 
-def compute_clusters(features, clustering_algorithm='KMeans'):
+def compute_clusters(features, clusters_filename, clustering_algorithm='KMeans'):
     """
     Compute clusters.
     Arguments:
         features:
+        clusters_filename:
         clustering_algorithm:
     Return:
         predicted_clusters:
     """
-    clusters_filename = clustering_algorithm + '_predicted_clusters.npz'
     if os.path.exists(clusters_filename):
         print('Predicted clusters detected. Loading...')
         predicted_clusters = np.load(clusters_filename)['predicted_clusters']
@@ -114,11 +130,20 @@ def compute_clusters(features, clustering_algorithm='KMeans'):
         np.savez(clusters_filename, predicted_clusters = predicted_clusters)
     return predicted_clusters
 
-def compute_pca_features(data, pca_components=200, pca_savefig=True):
-    pca_file = model_choice + '_pca_features.npz'
-    if os.path.exists(pca_file):
+def compute_pca_components(features, pca_filename, pca_components=200, pca_savefig=True):
+    """
+    Compute PCA starting from a set of features.
+    Arguments:
+        features: the set of features on which PCA must be computed.
+        pca_components: the number of principal components which should be considered.
+        pca_savefig: a flag which states whether a plot of the cumulative explained variance should be saved or not.
+    Returns:
+        pca_components: the set of computed PCA components.
+    """
+    pca_filename = model_choice + '_pca_components.npz'
+    if os.path.exists(pca_filename):
         print('loading pca')
-        pca_features = np.load(pca_file)['pca_features']
+        pca_features = np.load(pca_file)['pca_components']
         explained_variance = np.load(pca_file)['explained_variance']
     else:
         print('computing pca features')
@@ -158,8 +183,16 @@ def compute_tsne_features(data):
         plt.title('t-SNE clusters')
         plt.savefig(model_choice + '_tsne.jpg')
 
-def iterative_evaluate_clusters(labels, predicted_clusters, metrics='ARI'):
+
+def iterative_evaluate_clusters(labels, predicted_clusters, metrics='ARI', k=5):
     """
+    Iteratively evaluate clustering results.
+    Arguments:
+        labels:
+        predicted_clusters:
+        metrics:
+    Returns:
+
     """
     # Pre-process labels and predicted_clusters vectors.
     labels = labels.reshape((1, len(labels))).ravel()
@@ -170,6 +203,7 @@ def iterative_evaluate_clusters(labels, predicted_clusters, metrics='ARI'):
         'AMI': metrics.adjusted_mutual_info_score(labels, predicted_clusters)
     }
     # TODO: RETURN A LIST
+    # TODO: ITERATE THIS  
 
     return metric_dictionary[metric]
 
@@ -177,12 +211,12 @@ def iterative_evaluate_clusters(labels, predicted_clusters, metrics='ARI'):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--network_model", default='VGG16')
+    parser.add_argument("--perform_pca", default=True)
     parser.add_argument("--pca_components", default=200)
-    parser.add_argument("--do_pca", default=True)
     parser.add_argument("--do_clustering", default=True)
     parser.add_argument("--do_tsne", default=True)
     parser.add_argument("--dataset", default='cifar10')
-    parser.add_argument("--cluster_algorithm", default='KMeans')
+    parser.add_argument("--clustering_algorithm", default='KMeans')
 
     args = parser.parse_args()
 

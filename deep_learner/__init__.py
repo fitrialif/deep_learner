@@ -1,6 +1,4 @@
-from __future__ import absolute_import
-
-from . import utils
 from . import applications
+from . import utils
 
-__version__ = '0.1.0a'
+__version__ = '0.1.0'
