@@ -17,15 +17,16 @@ __dataset_dictionary = {
 
 
 def get_nb_files(root_folder):
-    """
-    Get the number of files in a folder's hierarchy.
-    Arguments:
-        root_folder: A string which represents the root folder.
-    Returns:
-        file_count: An integer which represents the number of files in the folder's hierarchy.
+    """Gets the number of files in a folder's hierarchy.
+
+    # Arguments:
+        root_folder (string): The relative path of the root folder.
+    # Returns:
+        file_count (integer): The number of files in the folder's hierarchy.
     """
     if not os.path.exists(root_folder):
-        sys.exit('Root folder does not exist.')
+        raise ValueError('Could not find the specified %s folder.' % (root_folder))
+
     file_count = 0
     for r, dirs, files in os.walk(root_folder):
         for dr in dirs:
@@ -34,7 +35,7 @@ def get_nb_files(root_folder):
 
 
 def load_keras_dataset(dataset='cifar10'):
-    """Load a Keras dataset. Wrapper around dataset-specific methods.
+    """Loads a Keras dataset. Wrapper around dataset-specific methods.
 
     For the specific type of the return, check Keras documentation.
 
