@@ -113,6 +113,7 @@ def compute_bottleneck_features(args):
             print(ami)
 #        np.savez(cluster_file, labels_pred = labels_pred)
 
+    # TODO: FORMALIZE K-FOLD
     if do_pca == True:
         pca_file = model_choice + '_pca_features.npz'
         if os.path.exists(pca_file):
@@ -134,41 +135,21 @@ def compute_bottleneck_features(args):
                 kpca_explained_variance_ = np.var(kpca_features, axis=0)
                 kpca_explained_variance = kpca_explained_variance_ / np.sum(kpca_explained_variance_)
                 print('calcolata la passata')
-                pca_auc.append(metrics.auc(np.arange(1,101), pca_explained_variance))
-                kpca_auc.append(metrics.auc(np.arange(1,101), kpca_explained_variance))
+                pca_auc.append(metrics.auc(np.arange(1,101), np.cumsum(pca_explained_variance)))
+                kpca_auc.append(metrics.auc(np.arange(1,101), np.cumsum(kpca_explained_variance)))
             pca_auc_out = np.mean(pca_auc)
             print('auc pca media')
             print(pca_auc_out)
             kpca_auc_out = np.mean(kpca_auc)
             print('auc kpca media')
             print(kpca_auc_out)
-    """
-            pca_features = pca.fit_transform(features.reshape([features.shape[0], np.prod(features.shape[1:])]).astype('float')[:10000])
-            pca_explained_variance = pca.explained_variance_ratio_
-            np.savez(pca_file, pca_features=pca_features, pca_explained_variance=pca_explained_variance)
-            print('pca saved')
+            plt.plot(np.cumsum(pca_explained_variance))
+            plt.plot(np.cumsum(kpca_explained_variance))
+            plt.xlabel('Kernel PCA components')
+            plt.ylabel('Explained variance (%)')
+            plt.title('Variance explained by Kernel PCA')
+            plt.savefig(model_choice + '_kpca_explained_variance.jpg')
 
-    if do_kpca == True:
-        kpca_file = model_choice + '_kpca_features.npz'
-        if os.path.exists(kpca_file):
-            print('loading kpca')
-            kpca_features = np.load(kpca_file)['kpca_features']
-            kpca_explained_variance = np.load(kpca_file)['kpca_explained_variance']
-        else:
-            print('computing k-pca features')
-            kpca = KernelPCA(kernel='rbf', n_components=100)
-            kpca_features = kpca.fit_transform(features.reshape([features.shape[0], np.prod(features.shape[1:])]).astype('float')[:10000])
-            kpca_explained_variance_ = np.var(kpca_features, axis=0)
-            kpca_explained_variance = kpca_explained_variance_ / np.sum(kpca_explained_variance_)
-            np.savez(kpca_file, kpca_features=kpca_features, kpca_explained_variance=kpca_explained_variance)
-            print('kpca saved')
-        plt.plot(np.cumsum(pca_explained_variance))
-        plt.plot(np.cumsum(kpca_explained_variance))
-        plt.xlabel('Kernel PCA components')
-        plt.ylabel('Explained variance (%)')
-        plt.title('Variance explained by Kernel PCA')
-        plt.savefig(model_choice + '_kpca_explained_variance.jpg')
-"""
     if do_tsne == True:
         tsne_file = model_choice + '_tsne_features.npz'
         if os.path.exists(tsne_file):
