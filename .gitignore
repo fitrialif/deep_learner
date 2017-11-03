@@ -103,5 +103,6 @@ ENV/
 logs/
 data/
 results/
+experimental/
 # Other files
 *.csv

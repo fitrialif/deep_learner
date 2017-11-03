@@ -1,12 +1,12 @@
-from setuptools import setup
-from setuptools import find_packages
+#!/usr/bin/env python
+from distutils.core import setup
 
 setup(
     name='Deep Learner',
-    version='0.1.0a',
-    description='Deep Learner wrapper for Keras',
+    version='0.1.0',
+    description='Deep Learning methods wrapper based on Kears and TensorFlow',
     author='Angelo Cardellicchio',
-    author_email='a.cardellicchio@aeflab.net',
-    url='https://github.com/anhelus',
+    author_email='a.cardellicchio@gmail.com',
+    url='https://github.com/anhelus/deep_learner',
     packages=find_packages()
 )
